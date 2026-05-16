@@ -1,0 +1,26 @@
+{
+  "id": "mffu-50k",
+  "name": "MyFundedFutures 50k Starter",
+  "type": "futures",
+  "platform": ["NinjaTrader", "Tradovate", "Rithmic"],
+  "account_size_usd": 50000,
+  "phase": "evaluation",
+  "profit_target_usd": 3000,
+  "drawdown": {
+    "mode": "trailing_intraday",
+    "amount_usd": 2000,
+    "lock_at_usd": 52000,
+    "notes": "Trailing intraday hasta alcanzar +2000 sobre balance inicial. Después se bloquea en balance inicial."
+  },
+  "max_daily_loss_usd": null,
+  "consistency_rule_pct": null,
+  "min_trading_days": 1,
+  "max_contracts": 5,
+  "max_lot_size": null,
+  "allow_overnight": false,
+  "allow_news_trading": true,
+  "scaling_plan_required": false,
+  "notes": "Sin consistency rule en Starter. Versión Expert sí tiene 30%. Cierre forzado posiciones 16:59 ET.",
+  "last_verified": "2026-05-16",
+  "source_url": "https://myfundedfutures.com/"
+}

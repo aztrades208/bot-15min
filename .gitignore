@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# State & logs
+mt5/state.json
+mt5/bot.log
+mt5/config.yaml
+
+# NinjaTrader build artifacts
+ninjatrader/bin/
+ninjatrader/obj/
+*.dll
+*.pdb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store

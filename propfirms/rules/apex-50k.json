@@ -1,0 +1,26 @@
+{
+  "id": "apex-50k",
+  "name": "Apex Trader Funding 50k Evaluation",
+  "type": "futures",
+  "platform": ["NinjaTrader", "Rithmic", "Tradovate"],
+  "account_size_usd": 50000,
+  "phase": "evaluation",
+  "profit_target_usd": 3000,
+  "drawdown": {
+    "mode": "trailing_intraday",
+    "amount_usd": 2500,
+    "lock_at_usd": 52600,
+    "notes": "Trailing intraday hasta alcanzar balance inicial + 2600 (lock at 52600 - 50000 + 2500 = 2600 sobre inicial). Una vez locked, drawdown se queda fijo en balance inicial."
+  },
+  "max_daily_loss_usd": null,
+  "consistency_rule_pct": 30,
+  "min_trading_days": 1,
+  "max_contracts": 10,
+  "max_lot_size": null,
+  "allow_overnight": false,
+  "allow_news_trading": true,
+  "scaling_plan_required": true,
+  "notes": "Tiene scaling plan: en evaluación máximo 10 micros (o 1 full por cada 10 micros). Consistency rule 30% aplica solo para retiros en PA. Cierre forzado de posiciones a las 16:59 ET.",
+  "last_verified": "2026-05-16",
+  "source_url": "https://apextraderfunding.com/"
+}

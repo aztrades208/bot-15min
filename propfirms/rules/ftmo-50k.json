@@ -1,0 +1,26 @@
+{
+  "id": "ftmo-50k",
+  "name": "FTMO Challenge 50k",
+  "type": "cfd",
+  "platform": ["MT4", "MT5", "cTrader", "DXtrade"],
+  "account_size_usd": 50000,
+  "phase": "evaluation",
+  "profit_target_usd": 5000,
+  "drawdown": {
+    "mode": "static",
+    "amount_usd": 5000,
+    "lock_at_usd": null,
+    "notes": "Max overall loss $5000 (10%). NO trailing."
+  },
+  "max_daily_loss_usd": 2500,
+  "consistency_rule_pct": null,
+  "min_trading_days": 0,
+  "max_contracts": null,
+  "max_lot_size": null,
+  "allow_overnight": true,
+  "allow_news_trading": true,
+  "scaling_plan_required": false,
+  "notes": "FTMO eliminó la regla de min trading days. Permite overnight y weekend (con condiciones). Profit target 10% en challenge, 5% en verification.",
+  "last_verified": "2026-05-16",
+  "source_url": "https://ftmo.com/"
+}

@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PropFirm Rules Schema",
+  "description": "Reglas operativas de una prop firm para uso del bot. Las cantidades en USD se asumen para el tamaño de cuenta indicado en account_size_usd.",
+  "type": "object",
+  "required": ["id", "name", "type", "account_size_usd", "phase", "drawdown", "profit_target_usd"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Identificador único (ej. 'apex-50k', 'topstep-50k-combine')"
+    },
+    "name": {
+      "type": "string",
+      "description": "Nombre legible (ej. 'Apex Trader Funding 50k')"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["futures", "cfd"],
+      "description": "futures o cfd determina qué motor del bot la usa"
+    },
+    "platform": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Plataformas soportadas (ej. ['NinjaTrader', 'Rithmic', 'Tradovate'] o ['MT4', 'MT5'])"
+    },
+    "account_size_usd": {
+      "type": "number",
+      "description": "Tamaño nominal de la cuenta"
+    },
+    "phase": {
+      "type": "string",
+      "enum": ["evaluation", "funded", "express"],
+      "description": "Fase de la cuenta"
+    },
+    "profit_target_usd": {
+      "type": "number",
+      "description": "Profit target para pasar la fase. 0 si es funded."
+    },
+    "drawdown": {
+      "type": "object",
+      "required": ["mode", "amount_usd"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["trailing_intraday", "trailing_eod", "static", "max_loss", "static_then_lock"]
+        },
+        "amount_usd": {
+          "type": "number",
+          "description": "Cantidad del drawdown (siempre positiva)"
+        },
+        "lock_at_usd": {
+          "type": ["number", "null"],
+          "description": "Si trailing se bloquea al alcanzar cierta equity (Apex)"
+        }
+      }
+    },
+    "max_daily_loss_usd": {
+      "type": ["number", "null"],
+      "description": "Pérdida máxima en un día (TopStep tiene; Apex no)"
+    },
+    "consistency_rule_pct": {
+      "type": ["number", "null"],
+      "description": "Profit máximo de UN día como % del profit total para validar (ej. 30 = 30%). Null si no aplica."
+    },
+    "min_trading_days": {
+      "type": ["integer", "null"],
+      "description": "Días mínimos a operar antes de poder retirar / pasar"
+    },
+    "max_contracts": {
+      "type": ["integer", "null"],
+      "description": "Tope de contratos por trade (futuros). Null = sin tope explícito."
+    },
+    "max_lot_size": {
+      "type": ["number", "null"],
+      "description": "Tope de lotaje por trade (CFDs). Null = sin tope explícito."
+    },
+    "allow_overnight": {
+      "type": "boolean",
+      "description": "¿Permite mantener posiciones overnight?"
+    },
+    "allow_news_trading": {
+      "type": "boolean",
+      "description": "¿Permite operar durante noticias high-impact?"
+    },
+    "scaling_plan_required": {
+      "type": "boolean",
+      "description": "¿Tiene scaling plan (escalado de contratos)?"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas libres (URL, observaciones, fecha de última revisión)"
+    },
+    "last_verified": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de última verificación de las reglas"
+    },
+    "source_url": {
+      "type": "string",
+      "description": "URL donde se verificaron las reglas"
+    }
+  }
+}

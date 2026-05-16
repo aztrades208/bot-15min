@@ -1,0 +1,26 @@
+{
+  "id": "axi-select",
+  "name": "Axi Select",
+  "type": "cfd",
+  "platform": ["MT4"],
+  "account_size_usd": 25000,
+  "phase": "express",
+  "profit_target_usd": 0,
+  "drawdown": {
+    "mode": "max_loss",
+    "amount_usd": 2500,
+    "lock_at_usd": null,
+    "notes": "Drawdown del 10% pero medido por Edge Score system (Axi mide consistencia, riesgo y retorno)."
+  },
+  "max_daily_loss_usd": null,
+  "consistency_rule_pct": null,
+  "min_trading_days": 14,
+  "max_contracts": null,
+  "max_lot_size": null,
+  "allow_overnight": true,
+  "allow_news_trading": true,
+  "scaling_plan_required": false,
+  "notes": "Axi Select es scaling progresivo basado en Edge Score (consistency, risk, return). Cuenta demo inicial 25k, escalable hasta 1M. El bot debe priorizar consistencia.",
+  "last_verified": "2026-05-16",
+  "source_url": "https://www.axi.com/eu/axi-select"
+}

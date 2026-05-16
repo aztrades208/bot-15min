@@ -1,0 +1,37 @@
+strategy:
+  range_start: "09:30"
+  range_end: "09:45"
+  entry_window_end: "17:00"
+  timezone: "America/New_York"
+  breakout_timeframe_minutes: 5
+  body_breakout_only: true
+  one_trade_per_day: true
+  hold_until_resolution: true
+
+  risk_usd: 2000
+  tp_r_multiple: 0.5
+  add_on_trigger_r: 0.4
+  add_on_size_multiple: 2.5
+  move_sl_to_entry_on_add: true
+
+instrument:
+  symbol: "US100"        # CFD del Nasdaq en MT5
+  magic_number: 159045   # identificador único de la EA en la cuenta
+
+broker:
+  type: "mt5"
+  login: 12345678
+  password: "REPLACE_ME"
+  server: "VantageInternational-Demo"
+  terminal_path: null    # opcional: ruta al MT5 terminal64.exe
+  deviation_points: 20   # slippage tolerado en points para órdenes market
+
+propfirm:
+  active_rules_file: "../propfirms/rules/vantage-prop.json"
+  enforce_daily_loss: true
+  enforce_overall_drawdown: true
+  flat_before_close_minutes: null   # null = no flatten antes; o N minutos para flatten N min antes del cierre
+
+state:
+  file: "./state.json"
+  log_file: "./bot.log"

@@ -1,0 +1,26 @@
+{
+  "id": "darwinex-zero",
+  "name": "Darwinex Zero",
+  "type": "cfd",
+  "platform": ["MT4", "MT5"],
+  "account_size_usd": 100000,
+  "phase": "express",
+  "profit_target_usd": 0,
+  "drawdown": {
+    "mode": "max_loss",
+    "amount_usd": 10000,
+    "lock_at_usd": null,
+    "notes": "Drawdown del 10% sobre el HWM (high water mark). Modelo DARWIN — riesgo y profit medidos por Darwinex VaR."
+  },
+  "max_daily_loss_usd": null,
+  "consistency_rule_pct": null,
+  "min_trading_days": 30,
+  "max_contracts": null,
+  "max_lot_size": null,
+  "allow_overnight": true,
+  "allow_news_trading": true,
+  "scaling_plan_required": false,
+  "notes": "Darwinex Zero NO es challenge tradicional — financian estrategias publicadas como DARWINs. El bot debe operar conservador y consistente. VaR mensual 10% es referencia. Cuenta demo de 100k con fondeo gradual basado en track record.",
+  "last_verified": "2026-05-16",
+  "source_url": "https://www.darwinex.com/zero"
+}

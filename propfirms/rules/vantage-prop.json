@@ -1,0 +1,26 @@
+{
+  "id": "vantage-prop-50k",
+  "name": "Vantage Prop 50k Challenge",
+  "type": "cfd",
+  "platform": ["MT4", "MT5"],
+  "account_size_usd": 50000,
+  "phase": "evaluation",
+  "profit_target_usd": 4000,
+  "drawdown": {
+    "mode": "static",
+    "amount_usd": 5000,
+    "lock_at_usd": null,
+    "notes": "Max overall loss 10% sobre balance inicial."
+  },
+  "max_daily_loss_usd": 2500,
+  "consistency_rule_pct": null,
+  "min_trading_days": 3,
+  "max_contracts": null,
+  "max_lot_size": null,
+  "allow_overnight": true,
+  "allow_news_trading": false,
+  "scaling_plan_required": false,
+  "notes": "No permite operar 5 min antes/después de noticias high-impact. Profit target 8% en challenge, 5% en verification. Mínimo 3 días operativos.",
+  "last_verified": "2026-05-16",
+  "source_url": "https://www.vantagemarkets.com/prop-trading/"
+}
