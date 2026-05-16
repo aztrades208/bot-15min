@@ -19,6 +19,10 @@ ninjatrader/obj/
 *.dll
 *.pdb
 
+# Backtest artifacts
+backtest/data/
+backtest/out/
+
 # IDE
 .vscode/
 .idea/

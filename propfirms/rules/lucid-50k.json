@@ -1,0 +1,26 @@
+{
+  "id": "lucid-50k",
+  "name": "Lucid Trading 50k Evaluation",
+  "type": "futures",
+  "platform": ["NinjaTrader", "Tradovate", "Rithmic"],
+  "account_size_usd": 50000,
+  "phase": "evaluation",
+  "profit_target_usd": 3000,
+  "drawdown": {
+    "mode": "trailing_intraday",
+    "amount_usd": 2000,
+    "lock_at_usd": 52000,
+    "notes": "PLACEHOLDER — verificar reglas oficiales. Asumido trailing intraday $2000, lock at +$2000 sobre inicial."
+  },
+  "max_daily_loss_usd": null,
+  "consistency_rule_pct": null,
+  "min_trading_days": 5,
+  "max_contracts": 5,
+  "max_lot_size": null,
+  "allow_overnight": false,
+  "allow_news_trading": true,
+  "scaling_plan_required": false,
+  "notes": "⚠️ PLACEHOLDER — no verificado contra documentación oficial de Lucid Trading. Confirmar: tipo de drawdown, daily loss, consistency, max contratos, min trading days. Revisar antes de operar.",
+  "last_verified": null,
+  "source_url": "https://lucidtrading.com/"
+}
