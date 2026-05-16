@@ -90,13 +90,19 @@ def _longest_streak(flags: list[bool]) -> int:
     return longest
 
 
-def print_summary(summary: dict) -> None:
+def print_summary(summary: dict, result: Optional["BacktestResult"] = None) -> None:
     print("=" * 72)
     print(f"Backtest Summary")
     print("=" * 72)
     print(f"Days in sample:        {summary['total_days']}")
     print(f"Trading days:          {summary['trades']}")
     print(f"No-trade days:         {summary['no_trade_days']}")
+    if result is not None and result.gap_warnings:
+        print(f"Gap warnings:          {len(result.gap_warnings)}  (posibles rollovers)")
+        for g in result.gap_warnings[:5]:
+            print(f"  - {g.session_date}: gap {g.gap_points:.1f} pts  ({g.prev_close} → {g.next_open})")
+        if len(result.gap_warnings) > 5:
+            print(f"  ... y {len(result.gap_warnings) - 5} más")
     if summary.get("trades", 0) == 0:
         return
     print(f"Wins / Losses / BE:    {summary['wins']} / {summary['losses']} / {summary['breakeven']}")

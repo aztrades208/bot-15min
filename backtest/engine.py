@@ -50,16 +50,27 @@ class Trade:
 
 
 @dataclass
+class GapWarning:
+    session_date: str
+    timestamp: str
+    gap_points: float
+    prev_close: float
+    next_open: float
+
+
+@dataclass
 class BacktestResult:
     trades: list[Trade] = field(default_factory=list)
     no_trade_days: int = 0
     total_days: int = 0
+    gap_warnings: list[GapWarning] = field(default_factory=list)
 
 
 @dataclass
 class ExecutionConfig:
     slippage_ticks: float = 2.0   # ticks de slippage en cada orden market
     pessimistic_intra_bar: bool = True  # si TP y SL están en la misma vela, asume SL primero
+    gap_warning_threshold_pts: float = 50.0  # detecta gaps > este valor (puntos) entre velas consecutivas
 
 
 def _dollars_per_point_per_lot(spec: InstrumentSpec) -> float:
@@ -77,6 +88,25 @@ def run_backtest(
     """
     exec_cfg = exec_cfg or ExecutionConfig()
     result = BacktestResult()
+
+    # Detect inter-day gaps (posibles rollovers de contrato)
+    from zoneinfo import ZoneInfo
+    tz = ZoneInfo(params.timezone)
+    for i in range(1, len(bars)):
+        prev = bars[i - 1]
+        curr = bars[i]
+        prev_day = prev.timestamp.astimezone(tz).date()
+        curr_day = curr.timestamp.astimezone(tz).date()
+        if curr_day != prev_day:
+            gap = abs(curr.open - prev.close)
+            if gap > exec_cfg.gap_warning_threshold_pts:
+                result.gap_warnings.append(GapWarning(
+                    session_date=curr_day.isoformat(),
+                    timestamp=curr.timestamp.isoformat(),
+                    gap_points=gap,
+                    prev_close=prev.close,
+                    next_open=curr.open,
+                ))
 
     # Agrupa por día en el TZ de la estrategia
     from data_loader import iter_session_days  # local import to avoid cycle

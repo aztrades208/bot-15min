@@ -89,7 +89,7 @@ def main() -> int:
     print(f"Backtesting {spec.symbol} risk=${args.risk_usd:.0f}...")
     result = run_backtest(bars, params, spec, exec_cfg)
     summary = summarize(result, starting_balance=args.starting_balance)
-    print_summary(summary)
+    print_summary(summary, result=result)
 
     if args.propfirm:
         print()
