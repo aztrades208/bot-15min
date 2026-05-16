@@ -148,23 +148,41 @@ def test_wick_only_does_not_enter():
 # Sizing
 # -----------------------------------------------------------------------------
 
-def test_sizing_mnq_range_50_points():
+def test_sizing_mnq_range_50_points_ideal_entry():
     """
-    MNQ tick_value=$0.50 sobre tick_size=$0.25 → $2/punto/contrato.
-    Rango 50 puntos × $2 = $100/contrato. N = 2000/100 = 20.
+    Sizing con entrada ideal (close justo por encima del rango, sin overshoot).
+    MNQ tick_value=$0.50/tick_size=$0.25 → $2/pt/contrato.
+    Range 50 puntos, entry ~50 puntos del SL → N ≈ 2000/(50×2) = 20.
     """
     eng = StrategyEngine(params=default_params(), instrument=mnq_spec())
-    # Construye un rango de 50 puntos exactos
     eng.on_new_5m_bar(make_bar(9, 30, 17000, 17050, 17000, 17040))
     eng.on_new_5m_bar(make_bar(9, 35, 17040, 17040, 17020, 17030))
     eng.on_new_5m_bar(make_bar(9, 40, 17030, 17050, 17000, 17050))
     eng.on_new_5m_bar(make_bar(9, 45, 17050, 17050, 17040, 17045))
-    plan = eng.on_new_5m_bar(make_bar(9, 50, 17045, 17075, 17040, 17070))
+    # close = 17050.25 → 1 tick por encima del rango (entry ideal sin overshoot)
+    plan = eng.on_new_5m_bar(make_bar(9, 50, 17045, 17052, 17040, 17050.25))
 
     assert plan is not None
     assert eng.range_built.width == 50
-    assert plan.initial_volume == 20
-    assert plan.add_on_volume == 50  # 20 × 2.5
+    # Stop real: 17050.25 - 17000 = 50.25 → N = floor(2000/(50.25×2)) = 19
+    assert plan.initial_volume == 19
+
+
+def test_sizing_with_overshoot_reduces_contracts():
+    """
+    Si el cierre del breakout overshoots significativamente, N se reduce
+    para respetar el riesgo de $2000.
+    """
+    eng = StrategyEngine(params=default_params(), instrument=mnq_spec())
+    eng.on_new_5m_bar(make_bar(9, 30, 17000, 17050, 17000, 17040))
+    eng.on_new_5m_bar(make_bar(9, 35, 17040, 17040, 17020, 17030))
+    eng.on_new_5m_bar(make_bar(9, 40, 17030, 17050, 17000, 17050))
+    eng.on_new_5m_bar(make_bar(9, 45, 17050, 17050, 17040, 17045))
+    # Close 17070 → overshoot de 20pts. Stop real = 70pts → N = floor(2000/140) = 14
+    plan = eng.on_new_5m_bar(make_bar(9, 50, 17045, 17075, 17040, 17070))
+
+    assert plan is not None
+    assert plan.initial_volume == 14  # menos que el ideal (19) porque overshoot
 
 
 def test_sizing_tight_range_more_contracts():
@@ -175,11 +193,13 @@ def test_sizing_tight_range_more_contracts():
     eng.on_new_5m_bar(make_bar(9, 35, 17005, 17015, 17000, 17010))
     eng.on_new_5m_bar(make_bar(9, 40, 17010, 17020, 17005, 17015))
     eng.on_new_5m_bar(make_bar(9, 45, 17015, 17018, 17010, 17012))
-    plan = eng.on_new_5m_bar(make_bar(9, 50, 17012, 17030, 17012, 17025))
+    # close apenas 1 tick por encima del range_high (17020 + 0.25)
+    plan = eng.on_new_5m_bar(make_bar(9, 50, 17012, 17022, 17012, 17020.25))
 
+    assert plan is not None
     assert eng.range_built.width == 20
-    # 20 pts × $2 = $40/contrato. N = 2000/40 = 50
-    assert plan.initial_volume == 50
+    # Stop real: 17020.25 - 17000 = 20.25 → N = floor(2000/40.5) = 49
+    assert plan.initial_volume == 49
 
 
 def test_sizing_wide_range_fewer_contracts():
@@ -189,11 +209,27 @@ def test_sizing_wide_range_fewer_contracts():
     eng.on_new_5m_bar(make_bar(9, 35, 17050, 17080, 17000, 17040))
     eng.on_new_5m_bar(make_bar(9, 40, 17040, 17090, 17000, 17080))
     eng.on_new_5m_bar(make_bar(9, 45, 17080, 17085, 17070, 17075))
-    plan = eng.on_new_5m_bar(make_bar(9, 50, 17075, 17120, 17075, 17110))
+    # close 17100.25 → 1 tick por encima del rango
+    plan = eng.on_new_5m_bar(make_bar(9, 50, 17075, 17105, 17075, 17100.25))
 
+    assert plan is not None
     assert eng.range_built.width == 100
-    # 100 pts × $2 = $200/contrato. N = 2000/200 = 10
-    assert plan.initial_volume == 10
+    # Stop real: 100.25 → N = floor(2000/200.5) = 9
+    assert plan.initial_volume == 9
+
+
+def test_overshoot_past_tp_skips_entry():
+    """Si la vela de ruptura cierra más allá del TP, NO se entra."""
+    eng = StrategyEngine(params=default_params(), instrument=mnq_spec())
+    eng.on_new_5m_bar(make_bar(9, 30, 17000, 17050, 17000, 17040))
+    eng.on_new_5m_bar(make_bar(9, 35, 17040, 17040, 17020, 17030))
+    eng.on_new_5m_bar(make_bar(9, 40, 17030, 17050, 17000, 17050))
+    eng.on_new_5m_bar(make_bar(9, 45, 17050, 17050, 17040, 17045))
+    # Range high=17050, TP = 17050 + 0.5*50 = 17075. Close 17080 > TP → skip
+    plan = eng.on_new_5m_bar(make_bar(9, 50, 17045, 17085, 17040, 17080))
+
+    assert plan is None
+    assert eng.state == StratState.DONE
 
 
 # -----------------------------------------------------------------------------
@@ -207,14 +243,10 @@ def _pl_at_price(side: Side, volume: float, entry: float, exit_: float,
     return pts * (spec.tick_value / spec.tick_size) * volume
 
 
-def test_total_pl_at_tp_equals_1500():
-    """
-    Con add-on 2.5x ejecutado, P&L al TP debe ser exactamente $1500
-    (3% sobre 50k = 1.5R sobre 2000 = 1500). Ésta es la propiedad clave de la spec.
-    """
+def _ideal_entry_setup():
+    """Setup con entry close = range_high + 1 tick (sin overshoot)."""
     spec = mnq_spec()
     eng = StrategyEngine(params=default_params(), instrument=spec)
-    # Setup rango 50 pts
     for b in [
         make_bar(9, 30, 17000, 17050, 17000, 17040),
         make_bar(9, 35, 17040, 17040, 17020, 17030),
@@ -222,71 +254,47 @@ def test_total_pl_at_tp_equals_1500():
         make_bar(9, 45, 17050, 17050, 17040, 17045),
     ]:
         eng.on_new_5m_bar(b)
-    plan = eng.on_new_5m_bar(make_bar(9, 50, 17045, 17075, 17040, 17070))
+    eng.on_new_5m_bar(make_bar(9, 50, 17045, 17052, 17040, 17050.25))
+    return eng, spec
+
+
+def test_total_pl_at_tp_close_to_1500_with_ideal_entry():
+    """
+    Con entrada ideal (sin overshoot del breakout) y add-on al 0.4R, el P&L al TP
+    es ≈ $1500. La cifra exacta depende del redondeo de contratos (sizing entero).
+    """
+    eng, spec = _ideal_entry_setup()
+    plan = eng.trade_plan
     assert plan is not None
-    rng = eng.range_built
-    ref_entry = rng.high  # 17050 — entry de referencia
-
-    # Add-on entra al 0.4R = 17050 + 0.4*50 = 17070
-    # TP al 0.5R = 17050 + 0.5*50 = 17075
-    add_entry_price = plan.add_on_trigger_price
-    assert add_entry_price == pytest.approx(17070)
-    assert plan.tp_price == pytest.approx(17075)
-
-    pl_initial = _pl_at_price(Side.LONG, plan.initial_volume, ref_entry, plan.tp_price, spec)
-    pl_add = _pl_at_price(Side.LONG, plan.add_on_volume, add_entry_price, plan.tp_price, spec)
-
-    assert pl_initial == pytest.approx(1000)
-    assert pl_add == pytest.approx(500)
-    assert pl_initial + pl_add == pytest.approx(1500)
+    pl_initial = _pl_at_price(Side.LONG, plan.initial_volume, plan.entry_price, plan.tp_price, spec)
+    pl_add = _pl_at_price(Side.LONG, plan.add_on_volume, plan.add_on_trigger_price, plan.tp_price, spec)
+    total = pl_initial + pl_add
+    # Con N=19 y M=47, total ≈ $1428 (un poco menos por redondeo, no $1500)
+    assert 1300 <= total <= 1550
 
 
-def test_total_pl_at_sl_after_add_equals_minus_2000():
+def test_total_pl_at_sl_after_add_at_most_minus_2000():
     """
-    Si después del add-on stopea (SL movido al entry original), pérdida total = $2000.
+    Si después del add-on stopea (SL combinado al ref_entry), la pérdida total
+    nunca debe exceder ~$2000 (con tolerancia por redondeo).
     """
-    spec = mnq_spec()
-    eng = StrategyEngine(params=default_params(), instrument=spec)
-    for b in [
-        make_bar(9, 30, 17000, 17050, 17000, 17040),
-        make_bar(9, 35, 17040, 17040, 17020, 17030),
-        make_bar(9, 40, 17030, 17050, 17000, 17050),
-        make_bar(9, 45, 17050, 17050, 17040, 17045),
-    ]:
-        eng.on_new_5m_bar(b)
-    plan = eng.on_new_5m_bar(make_bar(9, 50, 17045, 17075, 17040, 17070))
-    rng = eng.range_built
-    ref_entry = rng.high
-    add_entry = plan.add_on_trigger_price
-    sl_after = plan.sl_after_add  # debe ser ref_entry
-
-    assert sl_after == pytest.approx(ref_entry)
-
-    # Stopea — exit a sl_after
-    pl_initial = _pl_at_price(Side.LONG, plan.initial_volume, ref_entry, sl_after, spec)
-    pl_add = _pl_at_price(Side.LONG, plan.add_on_volume, add_entry, sl_after, spec)
-
-    assert pl_initial == pytest.approx(0)        # original BE
-    assert pl_add == pytest.approx(-2000)
-    assert pl_initial + pl_add == pytest.approx(-2000)
+    eng, spec = _ideal_entry_setup()
+    plan = eng.trade_plan
+    assert plan is not None
+    sl_after = plan.sl_after_add
+    pl_initial = _pl_at_price(Side.LONG, plan.initial_volume, plan.entry_price, sl_after, spec)
+    pl_add = _pl_at_price(Side.LONG, plan.add_on_volume, plan.add_on_trigger_price, sl_after, spec)
+    total = pl_initial + pl_add
+    assert -2050 <= total <= -1850
 
 
-def test_pl_at_initial_sl_without_addon_equals_minus_2000():
-    """Si stopea ANTES de llegar al 0.4R, pierde exactamente la R inicial."""
-    spec = mnq_spec()
-    eng = StrategyEngine(params=default_params(), instrument=spec)
-    for b in [
-        make_bar(9, 30, 17000, 17050, 17000, 17040),
-        make_bar(9, 35, 17040, 17040, 17020, 17030),
-        make_bar(9, 40, 17030, 17050, 17000, 17050),
-        make_bar(9, 45, 17050, 17050, 17040, 17045),
-    ]:
-        eng.on_new_5m_bar(b)
-    plan = eng.on_new_5m_bar(make_bar(9, 50, 17045, 17075, 17040, 17070))
-    ref_entry = eng.range_built.high
-
-    pl = _pl_at_price(Side.LONG, plan.initial_volume, ref_entry, plan.sl_price, spec)
-    assert pl == pytest.approx(-2000)
+def test_pl_at_initial_sl_at_most_minus_2000():
+    """Si stopea antes del add-on, pérdida ≤ ~$2000 (garantía del sizing-real)."""
+    eng, spec = _ideal_entry_setup()
+    plan = eng.trade_plan
+    assert plan is not None
+    pl = _pl_at_price(Side.LONG, plan.initial_volume, plan.entry_price, plan.sl_price, spec)
+    assert -2050 <= pl <= -1900
 
 
 # -----------------------------------------------------------------------------
@@ -352,7 +360,7 @@ def test_one_trade_per_day():
 
 
 def test_us100_cfd_sizing():
-    """Verifica que el sizing también funciona con CFDs (lotaje fraccionado)."""
+    """Sizing en CFDs con lotaje fraccionado, entry ideal sin overshoot."""
     spec = us100_cfd_spec()
     eng = StrategyEngine(params=default_params(), instrument=spec)
     # Rango 20 puntos en US100
@@ -363,7 +371,8 @@ def test_us100_cfd_sizing():
         make_bar(9, 45, 18015, 18018, 18010, 18012),
     ]:
         eng.on_new_5m_bar(b)
-    plan = eng.on_new_5m_bar(make_bar(9, 50, 18012, 18030, 18012, 18025))
+    # close = 18020.1 → 1 tick por encima del rango
+    plan = eng.on_new_5m_bar(make_bar(9, 50, 18012, 18022, 18012, 18020.1))
 
-    # US100: $1/pt/lot. Rango 20pts → $20/lot. N = 2000/20 = 100 lotes
-    assert plan.initial_volume == 100.0
+    # Stop real: 18020.1 - 18000 = 20.1 → $20.1/lot → N = floor(2000/20.1) = 99.50
+    assert plan.initial_volume == pytest.approx(99.50, abs=0.01)

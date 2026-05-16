@@ -202,9 +202,9 @@ namespace NinjaTrader.NinjaScript.Strategies
                     {
                         double prevClose = Close[1];
                         if (prevClose > rangeHigh)
-                            TryEnter(true);
+                            TryEnter(true, prevClose);
                         else if (prevClose < rangeLow)
-                            TryEnter(false);
+                            TryEnter(false, prevClose);
                     }
                     break;
 
@@ -221,20 +221,33 @@ namespace NinjaTrader.NinjaScript.Strategies
             }
         }
 
-        private void TryEnter(bool goLong)
+        private void TryEnter(bool goLong, double breakoutClose)
         {
             isLong      = goLong;
-            entryPrice  = goLong ? GetCurrentBid() + TickSize : GetCurrentAsk() - TickSize;
             double refEntry = isLong ? rangeHigh : rangeLow;
             stopPrice  = goLong ? rangeLow : rangeHigh;
+            // Entry market al cierre de la vela de ruptura (referencia del backtest);
+            // el fill real lo determina el broker. Usamos breakoutClose para sizing.
+            entryPrice = breakoutClose;
             tpPrice    = goLong ? refEntry + TpRMultiple * rangeWidth
                                 : refEntry - TpRMultiple * rangeWidth;
             addOnTriggerPrice = goLong ? refEntry + AddOnTriggerR * rangeWidth
                                        : refEntry - AddOnTriggerR * rangeWidth;
 
+            // Filtro overshoot: si el cierre ya pasó el TP, no entramos
+            if ((goLong && entryPrice >= tpPrice) || (!goLong && entryPrice <= tpPrice))
+            {
+                Print(string.Format("[{0}] Overshoot del TP en la propia vela — entry={1} TP={2}. Skip.",
+                    Time[0], entryPrice, tpPrice));
+                state = StratState.Done;
+                return;
+            }
+
             double pointValue       = Instrument.MasterInstrument.PointValue;
-            double stopDistancePts  = rangeWidth;
-            double riskPerContract  = stopDistancePts * pointValue;
+            // Sizing basado en la distancia REAL entry → SL (no en rangeWidth) para
+            // garantizar el riesgo máximo de $2000 incluso con overshoot del breakout.
+            double actualStopPts    = Math.Abs(entryPrice - stopPrice);
+            double riskPerContract  = actualStopPts * pointValue;
 
             if (riskPerContract <= 0)
             {

@@ -191,9 +191,7 @@ class StrategyEngine:
         assert rng is not None
         ref_entry = rng.high if side == Side.LONG else rng.low
         sl_price = rng.low if side == Side.LONG else rng.high
-        stop_pts = abs(ref_entry - sl_price)
-        if stop_pts <= 0:
-            return None
+        entry_price = bar.close       # market al close de la vela de ruptura
 
         tp_price = (ref_entry + self.params.tp_r_multiple * rng.width
                     if side == Side.LONG
@@ -202,9 +200,25 @@ class StrategyEngine:
                        if side == Side.LONG
                        else ref_entry - self.params.add_on_trigger_r * rng.width)
 
-        # Sizing: encuentra el volumen tal que (volume × stop_pts × dollar_per_point_per_lot) ≈ risk_usd
+        # Filtro de overshoot: si el cierre de la vela de ruptura ya está
+        # por encima del TP (LONG) o por debajo (SHORT), no entramos —
+        # la vela ya consumió el target, perseguir es perder.
+        if side == Side.LONG and entry_price >= tp_price:
+            self.state = StratState.DONE
+            return None
+        if side == Side.SHORT and entry_price <= tp_price:
+            self.state = StratState.DONE
+            return None
+
+        # Sizing basado en la distancia REAL entry → SL (no en range_width).
+        # Si entry está por encima de range_high (overshoot del breakout), el
+        # stop real es mayor que el range_width y debemos reducir N para no
+        # superar $2000 de riesgo.
+        actual_stop_pts = abs(entry_price - sl_price)
+        if actual_stop_pts <= 0:
+            return None
         dollar_per_point_per_lot = self.instrument.tick_value / self.instrument.tick_size
-        risk_per_lot = stop_pts * dollar_per_point_per_lot
+        risk_per_lot = actual_stop_pts * dollar_per_point_per_lot
         if risk_per_lot <= 0:
             return None
 
@@ -218,11 +232,11 @@ class StrategyEngine:
         if add_on_volume < self.instrument.volume_min:
             add_on_volume = 0.0  # add-on no aplica si no llega al mínimo
 
-        sl_after_add = ref_entry  # mover al entry original
+        sl_after_add = ref_entry  # mover al entry original (= range edge)
 
         plan = TradePlan(
             side=side,
-            entry_price=bar.close,       # market al close de la vela de ruptura
+            entry_price=entry_price,
             sl_price=sl_price,
             tp_price=tp_price,
             add_on_trigger_price=add_trigger,
