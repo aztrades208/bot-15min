@@ -20,12 +20,14 @@ import time
 from dataclasses import asdict
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 from zoneinfo import ZoneInfo
 
 import yaml
 
-from broker_mt5 import BrokerMT5
+if TYPE_CHECKING:
+    from broker_mt5 import BrokerMT5
+
 from risk_manager import AccountSnapshot, PropFirmRules, RiskManager
 from strategy import (
     Bar5m,
@@ -115,6 +117,10 @@ def main(config_path: str) -> int:
             logging.FileHandler(cfg["state"]["log_file"]),
         ],
     )
+
+    # Import diferido: broker_mt5 hace SystemExit si falta el paquete MetaTrader5,
+    # y no debe impedir `--help` ni la carga del módulo en máquinas sin MT5.
+    from broker_mt5 import BrokerMT5
 
     rules = PropFirmRules.from_file(cfg["propfirm"]["active_rules_file"])
     risk = RiskManager(rules)

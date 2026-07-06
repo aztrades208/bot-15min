@@ -62,7 +62,8 @@ pasa `--data-tz America/New_York`.
 | `--add-size-mult` | `2.5` | Tamaño del add-on |
 | `--range-start/end` | `09:30/09:45` | Rango NY |
 | `--entry-end` | `17:00` | Ventana de entrada NY |
-| `--slippage-ticks` | `2.0` | Slippage por orden market (cada lado) |
+| `--slippage-ticks` | `2.0` | Slippage por orden market de entrada (entry y add-on) |
+| `--starting-balance` | `50000` | Balance inicial para equity/return/compliance |
 | `--propfirm` | `null` | Path JSON propfirm para compliance check |
 | `--trades-csv` | `null` | Output trades a CSV |
 | `--summary-json` | `null` | Output summary a JSON |
@@ -92,7 +93,7 @@ pasa `--data-tz America/New_York`.
 1. **Equity actualizada solo al cierre del trade** — el drawdown intra-trade no
    se contabiliza para reglas trailing intraday (Apex). Resultado: backtest
    ligeramente optimista vs. realidad.
-2. **Slippage simétrico** — solo en entrada. TP/SL se asumen llenados exactos
+2. **Slippage solo en entradas** (entry y add-on). TP/SL se asumen llenados exactos
    al precio (no realista en gaps grandes).
 3. **Mismo bar TP+SL** — si ambos están dentro del high/low de la misma vela,
    se asume **SL primero** (pesimista, configurable).
@@ -107,6 +108,7 @@ pasa `--data-tz America/New_York`.
 Para probar el motor sin datos reales:
 
 ```bash
+mkdir -p data
 python generate_synthetic.py --days 60 --out data/synthetic.csv
 ```
 

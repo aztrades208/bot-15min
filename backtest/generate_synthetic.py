@@ -12,8 +12,13 @@ from __future__ import annotations
 import argparse
 import csv
 import random
+import sys
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+
+# Windows: la consola cp1252 no puede imprimir '→' — fuerza UTF-8
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 
 def gen(days: int, out: str, base_price: float = 17000.0, seed: int = 42) -> None:

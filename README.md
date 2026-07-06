@@ -7,7 +7,7 @@ Bot de trading que opera el rango de apertura de Nueva York (9:30 - 9:45 ET) y e
 1. **Caja**: rango High/Low de las velas de 15m entre 9:30 y 9:45 ET.
 2. **Entrada**: vela de 5m que cierra con cuerpo (close) fuera del rango → entrada market en la dirección de la ruptura.
 3. **SL inicial**: extremo opuesto del rango 15m. Riesgo total fijo $2000 (4% de cuenta 50k).
-4. **TP**: nivel 0.5R sobre el precio de entrada (ej. $1000 con sizing inicial).
+4. **TP**: nivel 0.5R sobre el borde del rango roto (ej. ~$1000 con sizing inicial).
 5. **Add-on al 0.4R**: añadir 2.5x el tamaño original, mover SL combinado al precio de entrada original (breakeven del original). Si stopea = -$2000. Si llega al TP = $1500 (3% de cuenta 50k).
 6. **Sizing**: contratos calculados dinámicamente para que `(N × stop_ticks × tick_value) = $2000`. Rango cerrado → más contratos. Rango amplio → menos.
 7. **Ventana de entrada**: hasta las 17:00 ET. Si no hay ruptura válida, no se opera el día.
@@ -20,6 +20,7 @@ Matemática del add-on: [`docs/strategy.md#matemática-del-add-on`](docs/strateg
 
 ```
 bot-15min/
+├── backtest/              Motor de backtest sobre datos históricos de 5m
 ├── docs/                  Spec de la estrategia y arquitectura
 ├── ninjatrader/           NinjaScript (C#) para futuros MNQ/MES en NinjaTrader 8
 ├── mt5/                   Python + MetaTrader5 para CFDs (Darwinex Zero, Vantage, Axi)
@@ -38,8 +39,8 @@ bot-15min/
 
 ## Prop firms soportadas (config inicial)
 
-Futuros: Apex Trader Funding, TopStep, MyFundedFutures, TakeProfit Trader, Tradeify.
-CFDs: Darwinex Zero, Vantage Prop, Axi Select, FTMO, MyForexFunds.
+Futuros: Apex Trader Funding, TopStep, MyFundedFutures, TakeProfit Trader, LucidFlex.
+CFDs: Darwinex Zero, Vantage Prop, Axi Select, FTMO.
 
 Cada una con su archivo en `propfirms/rules/<firma>.json` definiendo trailing/EOD drawdown, profit target, consistencia, días mínimos, etc.
 
@@ -49,9 +50,9 @@ Cada una con su archivo en `propfirms/rules/<firma>.json` definiendo trailing/EO
 - [x] Estructura de propfirms con reglas top firms
 - [x] NinjaScript: estrategia ORB con add-on
 - [x] Python/MT5: motor de estrategia + adapter MT5
-- [ ] Tests unitarios de cálculo de sizing y add-on
+- [x] Tests unitarios de cálculo de sizing y add-on
 - [ ] Agente de scraping de propfirms (Fase 2)
-- [ ] Backtesting framework
+- [x] Backtesting framework
 
 ## Disclaimer
 

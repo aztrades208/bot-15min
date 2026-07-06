@@ -20,6 +20,10 @@ from pathlib import Path
 
 import pandas as pd
 
+# Windows: la consola cp1252 no puede imprimir '→' / '⚠' — fuerza UTF-8
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 
 def convert(in_path: str, out_path: str, source_tz: str = "UTC") -> None:
     print(f"Leyendo ticks de {in_path} ...")
