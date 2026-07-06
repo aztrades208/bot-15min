@@ -26,15 +26,20 @@
 Sea:
 - `Range = RangeHigh - RangeLow` (en puntos)
 - `TickSize` = tamaño mínimo (ej. 0.25 para MNQ/MES/ES/NQ)
-- `TickValue` = valor de un tick ($0.50 para MNQ, $1.25 para MES, $5.00 para ES, $2.00 para NQ)
+- `TickValue` = valor de un tick ($0.50 para MNQ, $1.25 para MES, $5.00 para NQ, $12.50 para ES)
 - `RiskUSD = $2000` (configurable)
 
 ```
-StopTicks = Range / TickSize
+StopPts = |EntryPrice - SL_initial|         # ≈ Range si la entrada cierra pegada al rango
+StopTicks = StopPts / TickSize
 RiskPerContract = StopTicks × TickValue
 N = floor(RiskUSD / RiskPerContract)        # contratos iniciales
 ActualRisk = N × RiskPerContract            # ≤ $2000 (no excede por redondeo)
 ```
+
+El sizing usa la distancia **real** entry → SL (no el ancho nominal del rango): si la
+vela de ruptura cierra con overshoot por encima/debajo del rango, `N` se reduce para
+no superar los $2000 de riesgo.
 
 ### Ejemplos (MNQ, tick=0.25, tickValue=$0.50)
 
@@ -46,6 +51,7 @@ ActualRisk = N × RiskPerContract            # ≤ $2000 (no excede por redondeo
 | 150          | 600       | $300            | 6           | $1800      |
 
 Rango cerrado → más contratos. Rango amplio → menos. Riesgo siempre ≤ $2000.
+(Los ejemplos asumen entrada exactamente en el borde del rango.)
 
 ## Entrada
 
@@ -56,6 +62,8 @@ Cuando se cierra una vela de 5m con su `Close > RangeHigh` (alcista) o `Close < 
 
 Implementación recomendada: orden **Market** al cierre de la vela 5m de ruptura. Más realista que stop-on-break (que sufre slippage).
 
+**Filtro de overshoot**: si la vela de ruptura cierra ya más allá del nivel de TP (0.5R), NO se entra — la vela consumió el target y el día queda cerrado.
+
 ## Stop Loss inicial
 
 - Long: `SL_initial = RangeLow`
@@ -65,23 +73,23 @@ Distancia: `|EntryPrice - SL_initial| ≈ Range` (puede ser un tick mayor si ent
 
 ## Take Profit (objetivo)
 
-Nivel fijo en **0.5R** desde el precio de entrada:
+Nivel fijo en **0.5R** anclado al borde del rango roto (no al fill real):
 
-- Long: `TP = EntryPrice + 0.5 × Range`
-- Short: `TP = EntryPrice - 0.5 × Range`
+- Long: `TP = RangeHigh + 0.5 × Range`
+- Short: `TP = RangeLow - 0.5 × Range`
 
-Con sizing inicial (sin add-on): `Profit_TP = N × StopTicks × 0.5 × TickValue = 0.5 × RiskUSD = $1000`.
+Con sizing inicial (sin add-on) y entrada pegada al rango: `Profit_TP = N × StopTicks × 0.5 × TickValue ≈ 0.5 × RiskUSD = $1000`.
 
 ## Trigger de add-on (al 0.4R)
 
-Cuando el precio alcanza el nivel **0.4R** **a favor**:
+Cuando el precio alcanza el nivel **0.4R** **a favor** (anclado al borde del rango):
 
-- Long: `AddTriggerPrice = EntryPrice + 0.4 × Range`
-- Short: `AddTriggerPrice = EntryPrice - 0.4 × Range`
+- Long: `AddTriggerPrice = RangeHigh + 0.4 × Range`
+- Short: `AddTriggerPrice = RangeLow - 0.4 × Range`
 
 Acciones simultáneas:
 1. **Añadir 2.5 × N contratos a mercado** al precio actual (≈ AddTriggerPrice).
-2. **Mover SL de TODA la posición (original + add-on) a `EntryPrice` original** (breakeven del original).
+2. **Mover SL de TODA la posición (original + add-on) al borde del rango roto** (`RangeHigh` en long / `RangeLow` en short = entrada de referencia, ≈ breakeven del original).
 3. **Mantener TP fijo** en el nivel 0.5R original.
 
 ## Matemática del add-on
@@ -181,9 +189,9 @@ strategy:
 
 instrument:
   symbol: "MNQ"
-  tick_size: 0.25
+  tick_size: 0.25    # en MT5 se leen automáticamente de symbol_info del broker
   tick_value: 0.50
 
 propfirm:
-  active: "apex-50k"
+  active_rules_file: "propfirms/rules/apex-50k.json"
 ```

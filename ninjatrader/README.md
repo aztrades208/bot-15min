@@ -55,14 +55,15 @@ Estado ScaledIn / Done
 ## Cálculo de contratos
 
 ```
-StopTicks      = (rangeHigh - rangeLow) / TickSize
-RiskPerContract = StopTicks × TickValue  
-              = (rangeHigh - rangeLow) × PointValue
+StopPts        = |entryClose - SL|   (≈ rangeHigh - rangeLow si no hay overshoot)
+RiskPerContract = StopPts × PointValue
 N initial      = floor(RiskUSD / RiskPerContract)
 N add-on       = floor(N initial × 2.5)
 ```
 
-Para `MNQ` (`PointValue=$2`) con rango de 50 puntos:
+El sizing usa la distancia real entry → SL: si la vela de ruptura cierra con
+overshoot, `N initial` baja para no superar el riesgo. Ejemplo aproximado para
+`MNQ` (`PointValue=$2`) con rango de 50 puntos y entrada pegada al rango:
 - `RiskPerContract = 50 × $2 = $100`
 - `N initial = 20` contratos
 - `N add-on = 50` contratos

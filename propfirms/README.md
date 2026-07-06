@@ -12,6 +12,7 @@ propfirms/
 │   ├── topstep-50k.json
 │   ├── mffu-50k.json
 │   ├── takeprofit-50k.json
+│   ├── lucid-50k.json
 │   ├── ftmo-50k.json
 │   ├── darwinex-zero.json
 │   ├── vantage-prop.json
@@ -32,7 +33,7 @@ propfirms/
 | Campo | Significado |
 |-------|-------------|
 | `type` | `futures` (usa motor NinjaTrader) o `cfd` (usa motor MT5) |
-| `drawdown.mode` | `trailing_intraday`, `trailing_eod`, `static`, `max_loss` |
+| `drawdown.mode` | `trailing_intraday`, `trailing_eod`, `static`, `max_loss`, `static_then_lock` |
 | `drawdown.amount_usd` | Cantidad del drawdown (siempre positiva) |
 | `drawdown.lock_at_usd` | Para trailing: equity al que se bloquea |
 | `max_daily_loss_usd` | Pérdida máxima en un día (TopStep tiene; Apex no) |

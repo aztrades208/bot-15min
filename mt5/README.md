@@ -46,7 +46,7 @@ Difiere de futuros: aquí el "tamaño" es **lotes** (0.01 mínimo, 0.01 step).
 ```
 dollar_per_point_per_lot = tick_value / tick_size
 risk_per_lot = stop_pts × dollar_per_point_per_lot
-lots = floor(risk_usd / risk_per_lot)
+lots = risk_usd / risk_per_lot   # redondeado hacia abajo al volume_step del broker
 ```
 
 Ejemplo US100 en Vantage (tick_size=0.1, tick_value=$0.10 por mini-lote):
