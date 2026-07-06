@@ -168,7 +168,10 @@ namespace NinjaTrader.NinjaScript.Strategies
             switch (state)
             {
                 case StratState.WaitRangeOpen:
-                    if (barNyTime >= rangeStartDt && barNyTime < rangeEndDt)
+                    // Time[0] es la hora de CIERRE de la vela en NT8: las 3 velas del
+                    // rango 9:30-9:45 cierran en 9:35, 9:40 y 9:45 (la vela que cierra
+                    // exactamente a las 9:30 es pre-market y NO cuenta).
+                    if (barNyTime > rangeStartDt && barNyTime <= rangeEndDt)
                     {
                         state = StratState.BuildingRange;
                         rangeHigh = High[0];
@@ -177,12 +180,12 @@ namespace NinjaTrader.NinjaScript.Strategies
                     break;
 
                 case StratState.BuildingRange:
-                    if (barNyTime < rangeEndDt)
+                    if (barNyTime <= rangeEndDt)
                     {
                         if (High[0] > rangeHigh) rangeHigh = High[0];
                         if (Low[0]  < rangeLow ) rangeLow  = Low[0];
                     }
-                    if (IsFirstTickOfBar && ToNYTime(Time[0]) >= rangeEndDt)
+                    if (IsFirstTickOfBar && ToNYTime(Time[0]) > rangeEndDt)
                     {
                         rangeWidth = rangeHigh - rangeLow;
                         state = StratState.Monitoring;
@@ -192,14 +195,17 @@ namespace NinjaTrader.NinjaScript.Strategies
                     break;
 
                 case StratState.Monitoring:
-                    if (barNyTime >= entryWindowEnd)
-                    {
-                        state = StratState.Done;
-                        Print(string.Format("[{0:yyyy-MM-dd}] Sin ruptura válida hasta 17:00. Día cerrado.", sessionDate));
-                        break;
-                    }
                     if (IsFirstTickOfBar)
                     {
+                        // La vela evaluada es la ANTERIOR (Close[1], cierra en Time[1]).
+                        // Es válida mientras cierre a las 17:00 o antes — igual que el
+                        // motor Python (open < 17:00 ⇔ close <= 17:00).
+                        if (ToNYTime(Time[1]) > entryWindowEnd)
+                        {
+                            state = StratState.Done;
+                            Print(string.Format("[{0:yyyy-MM-dd}] Sin ruptura válida hasta 17:00. Día cerrado.", sessionDate));
+                            break;
+                        }
                         double prevClose = Close[1];
                         if (prevClose > rangeHigh)
                             TryEnter(true, prevClose);

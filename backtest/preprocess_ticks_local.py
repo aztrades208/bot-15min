@@ -19,9 +19,14 @@ from __future__ import annotations
 
 import argparse
 import gc
+import sys
 from pathlib import Path
 
 import pandas as pd
+
+# Windows: la consola cp1252 no puede imprimir '→' — fuerza UTF-8
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 
 def preprocess(in_path: str, out_path: str, tz: str = "UTC",
